@@ -1,6 +1,6 @@
 package dev.ChiChiOGames.TileGame;
 
-import dev.ChiChiOGames.TileGame.Display.Display;
+
 
 public class Launcher {
 	

@@ -7,15 +7,22 @@ import java.awt.image.BufferedImage;
 
 import dev.ChiChiOGames.TileGame.Display.Display;
 import dev.ChiChiOGames.TileGame.gfx.Assets;
+import dev.ChiChiOGames.TileGame.gfx.GameCamera;
 import dev.ChiChiOGames.TileGame.gfx.ImageLoader;
 import dev.ChiChiOGames.TileGame.gfx.SpriteSheet;
+import dev.ChiChiOGames.TileGame.input.KeyManager;
+import dev.ChiChiOGames.TileGame.states.GameState;
+import dev.ChiChiOGames.TileGame.states.MenuState;
+import dev.ChiChiOGames.TileGame.states.SettingsState;
+import dev.ChiChiOGames.TileGame.states.State;
 
 //holds the start run and close everything
 public class Game implements Runnable{
 	
 	private Display display;
 	
-	public int width, height;
+	private int width, height;
+	
 	public String title;
 	
 	private boolean running = false;
@@ -24,21 +31,43 @@ public class Game implements Runnable{
 	private BufferStrategy bs;
 	private Graphics g;
 	
+	//States of the game
+	private State gameState;
+	private State menuState;
+	private State settingsState;
 	
-//	private BufferedImage testImage;//test code
-//	private SpriteSheet sheet;//test code
+	//Inputs
+	private KeyManager keyManager;
+	
+	//Camera
+	private GameCamera gameCamera;
+	
+	//Handler
+	private Handler handler;
+	
 	
 	
 	public Game(String title, int width, int height) {
 		this.width = width;
 		this.height = height;
 		this.title = title;
-		
+		keyManager = new KeyManager();
 	}
 	
 	private void init() {
 		display = new Display(title, width, height);
+		display.getFrame().addKeyListener(keyManager);;
 		Assets.init();
+		
+		handler = new Handler(this);
+		gameCamera = new GameCamera(handler, 0, 0);
+		
+		
+		gameState = new GameState(handler);
+		menuState = new MenuState(handler);
+		settingsState = new SettingsState(handler);
+		State.setCurrentState(gameState);
+		
 		
 //		testImage = ImageLoader.loadImage("/textures/faceSheet.png");// test code
 //		sheet = new SpriteSheet(testImage);//test code
@@ -47,8 +76,13 @@ public class Game implements Runnable{
 	
 	
 	private void tick() {//this will be what updates the game
+		keyManager.tick();//
 		
+		if(State.getCurrentState() != null) {
+			State.getCurrentState().tick();
+		}
 	}
+	
 	private void render() {
 		bs = display.getCanvas().getBufferStrategy();
 		if(bs == null) {
@@ -58,27 +92,71 @@ public class Game implements Runnable{
 		g = bs.getDrawGraphics();
 		g.clearRect(0, 0, width, height);//clear screen
 //start Draw 
-		
-		g.drawImage(Assets.grass, 0,0, null);
-		g.drawImage(Assets.dirt, 110,0, null);
-		g.drawImage(Assets.stone, 220,0, null);
-		g.drawImage(Assets.tree, 5,110, null);
-		g.drawImage(Assets.player, 110,110, null);
-		
-//		g.drawImage(sheet.crop(40, 0, 21, 21), 20, 20, null);//test code
+		if(State.getCurrentState() != null) {
+			State.getCurrentState().render(g);
+		}
+
 		
 //end Draw
 		bs.show();
 		g.dispose();
 	}
+	
 	public void run() {
 		
 		init();
 		
+		int fps = 60;//Firms Per Second
+		double timePerTick = 1000000000 / fps;
+		double delta =0;
+		long now;
+		long lastTime = System.nanoTime();
+		long timer = 0;
+		int ticks =0;
+		
 		while(running) {
-			tick();
-			render();
+			now = System.nanoTime();
+			delta += (now - lastTime)/timePerTick;//(now - lastTime) get the amount of time that has passed since "now" was updated
+			timer += now - lastTime;
+			lastTime = now;
+			
+			
+			if(delta >=1) {//checks if a second has passed if so methods are called
+				tick();
+				render();
+				ticks++;
+				delta --;
+			}
+			
+			if(timer >= 1000000000) {
+				System.out.println("Ticks and Frames: "+ ticks);
+				ticks =0;
+				timer =0;
+			}
 		}
+		stop();
+	}
+	
+	public KeyManager getKeyManager() {
+		return keyManager;
+	}
+	
+	public GameCamera getGameCamera() {
+		return gameCamera;
+	}
+	
+	public int getWidth() {
+		return width;
+	}
+	public void setWidth(int width) {
+		this.width = width;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+	public void setHeight(int height) {
+		this.height = height;
 	}
 	
 	public synchronized void start() {
