@@ -11,6 +11,7 @@ import dev.ChiChiOGames.TileGame.gfx.GameCamera;
 import dev.ChiChiOGames.TileGame.gfx.ImageLoader;
 import dev.ChiChiOGames.TileGame.gfx.SpriteSheet;
 import dev.ChiChiOGames.TileGame.input.KeyManager;
+import dev.ChiChiOGames.TileGame.input.MouseManager;
 import dev.ChiChiOGames.TileGame.states.GameState;
 import dev.ChiChiOGames.TileGame.states.MenuState;
 import dev.ChiChiOGames.TileGame.states.SettingsState;
@@ -32,12 +33,16 @@ public class Game implements Runnable{
 	private Graphics g;
 	
 	//States of the game
-	private State gameState;
-	private State menuState;
-	private State settingsState;
+//	private State gameState;
+//	private State menuState;
+//	private State settingsState;
+	public State gameState;
+	public State menuState;
+	public State settingsState;
 	
 	//Inputs
 	private KeyManager keyManager;
+	private MouseManager mouseManager;
 	
 	//Camera
 	private GameCamera gameCamera;
@@ -52,11 +57,17 @@ public class Game implements Runnable{
 		this.height = height;
 		this.title = title;
 		keyManager = new KeyManager();
+		mouseManager = new MouseManager();
 	}
 	
 	private void init() {
 		display = new Display(title, width, height);
-		display.getFrame().addKeyListener(keyManager);;
+		display.getFrame().addKeyListener(keyManager);
+		display.getFrame().addMouseListener(mouseManager);
+		display.getFrame().addMouseMotionListener(mouseManager);
+		display.getCanvas().addMouseListener(mouseManager);
+		display.getCanvas().addMouseMotionListener(mouseManager);
+		
 		Assets.init();
 		
 		handler = new Handler(this);
@@ -66,11 +77,10 @@ public class Game implements Runnable{
 		gameState = new GameState(handler);
 		menuState = new MenuState(handler);
 		settingsState = new SettingsState(handler);
-		State.setCurrentState(gameState);
+
+		State.setCurrentState(menuState);
 		
 		
-//		testImage = ImageLoader.loadImage("/textures/faceSheet.png");// test code
-//		sheet = new SpriteSheet(testImage);//test code
 	}
 	
 	
@@ -139,6 +149,9 @@ public class Game implements Runnable{
 	
 	public KeyManager getKeyManager() {
 		return keyManager;
+	}
+	public MouseManager getMouseManager() {
+		return mouseManager;
 	}
 	
 	public GameCamera getGameCamera() {
